@@ -102,23 +102,14 @@ Tensor Tensor::transpose(int dim0, int dim1) const {
 }
 
 Tensor Tensor::add(const Tensor& other) const {
-    if (shape_ != other.shape_) {
-        throw std::invalid_argument("Tensor addition requires matching shapes");
-    }
-    if (ndim() > 1) {
-        throw std::invalid_argument("Tensor addition currently supports vectors and scalars only");
-    }
-
-    Tensor result(shape_);
+    BroadcastMeta m = make_broadcast_metadata(*this, other);
+    Tensor result(std::vector<int>(m.shape, m.shape + m.ndim));
     if (no_of_elements_ == 0) {
         return result;
     }
 
-    const int stride_a = ndim() == 0 ? 1 : strides_[0];
-    const int stride_b = other.ndim() == 0 ? 1 : other.strides_[0];
-    launch_matrix_add(data_.get() + offset_, stride_a,
-                      other.data_.get() + other.offset_, stride_b,
-                      result.data_.get(), 1, no_of_elements_);
+    launch_add_nd(data_.get() + offset_, other.data_.get() + other.offset_,
+                  result.data_.get(), m);
     return result;
 }
 
@@ -146,4 +137,52 @@ std::vector<float> Tensor::to_cpu() const {
                               sizeof(float), cudaMemcpyDeviceToHost));
     }
     return result;
+}
+
+static BroadcastMeta make_broadcast_metadata(const Tensor& a, const Tensor& b){
+    const int nd = std::max(a.ndim(), b.ndim());          // the dimension of the tensor with max dimension is chosen
+    if(nd > max_dim){
+        throw std::invalid_argument("Number of dimensions greater than maximum allowed dimensions");
+    }
+
+    BroadcastMeta m{};               // initialising new datastructure to return metadata
+    m.numel = 1;
+    m.ndim = nd;
+
+    for(int i = 0; i < nd; ++i){
+        int ai = a.ndim() - 1 - i;
+        int bi = b.ndim() - 1 - i;
+
+        int da = (ai < 0)? 1:a.shape()[ai];
+        int db = (bi < 0)? 1:b.shape()[bi];
+
+        int out_dim;
+        if (da == db)      
+            out_dim = da;
+        else if (da == 1)  
+            out_dim = db;
+        else if (db == 1)  
+            out_dim = da;
+        else 
+            throw std::invalid_argument("Shapes are not broadcastable");
+
+        int pos = nd - 1 - i;                 // position in output shape
+        m.shape[pos]    = out_dim;
+        m.stride_a[pos] = (ai >= 0 && da != 1) ? a.strides()[ai] : 0;
+        m.stride_b[pos] = (bi >= 0 && db != 1) ? b.strides()[bi] : 0;
+        m.numel *= out_dim;
+    }
+    return m;
+}
+
+Tensor Tensor::from_host(const std::vector<int>& shape,
+                         const std::vector<float>& values) {
+    Tensor t(shape);
+    if (static_cast<int>(values.size()) != t.no_of_elements_)
+        throw std::invalid_argument("from_host: size mismatch");
+    if (t.no_of_elements_ > 0)
+        CUDA_CHECK(cudaMemcpy(t.data_.get(), values.data(),
+                              values.size() * sizeof(float),
+                              cudaMemcpyHostToDevice));
+    return t;
 }

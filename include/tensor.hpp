@@ -43,6 +43,8 @@ public:
     Tensor add(const Tensor& other) const;
     
     std::vector<float> to_cpu() const;
+    static Tensor from_host(const std::vector<int>& shape,
+                        const std::vector<float>& values);
 
     
 };

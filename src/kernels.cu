@@ -15,7 +15,7 @@ void launch_matrix_add(const float* a, int stride_a, const float* b, int stride_
     CUDA_CHECK_KERNEL();
 }
 
-__global__ void launch_add_nd(float* a, float* b, float* out, BroadcastMeta metadata){
+__global__ void add_nd_kernel(float* a, float* b, float* out, BroadcastMeta metadata){
     int i = blockDim.x * blockIdx.x + threadIdx.x;
     int ia = 0, ib = 0;
     if(i > metadata.numel)
