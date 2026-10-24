@@ -1,0 +1,33 @@
+
+cmake_minimum_required(VERSION 3.24)
+project(autograd_engine LANGUAGES CXX CUDA)
+ 
+set(CMAKE_CXX_STANDARD 20)
+set(CMAKE_CXX_STANDARD_REQUIRED ON)
+set(CMAKE_CUDA_STANDARD 20)
+set(CMAKE_CUDA_STANDARD_REQUIRED ON)
+ 
+# Set this to match your GPU's compute capability.
+# e.g. 86 for RTX 30-series, 89 for RTX 40-series, 90 for H100.
+# Run `nvidia-smi --query-gpu=compute_cap --format=csv` to check, or
+# leave "native" (CMake >= 3.24) to auto-detect from the local GPU.
+set(CMAKE_CUDA_ARCHITECTURES native)
+ 
+# Debug builds: line info + device debug symbols for cuda-gdb / compute-sanitizer.
+set(CMAKE_CUDA_FLAGS_DEBUG "${CMAKE_CUDA_FLAGS_DEBUG} -G -lineinfo")
+# Release builds: keep line info so Nsight Compute can still map back to source.
+set(CMAKE_CUDA_FLAGS_RELEASE "${CMAKE_CUDA_FLAGS_RELEASE} -lineinfo")
+ 
+add_executable(autograd_engine
+    src/main.cpp
+    src/tensor.cpp
+    src/kernels.cu
+)
+ 
+target_include_directories(autograd_engine PRIVATE include)
+ 
+# Separable compilation lets .cu files call device functions defined in other
+# .cu files -- you'll want this once kernels.cu grows into multiple files.
+set_target_properties(autograd_engine PROPERTIES
+    CUDA_SEPARABLE_COMPILATION ON
+)
