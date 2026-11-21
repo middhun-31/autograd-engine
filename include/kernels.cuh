@@ -16,4 +16,14 @@ void launch_matrix_add(const float* a, int stride_a,
                          float* out, int stride_out,
                          int n);
 
-void launch_add_nd(float* a, float* b, float* out, BroadcastMeta metadata);
+void launch_add_nd(const float* a, const float* b, float* out,
+                   const BroadcastMeta& metadata);
+void launch_sub_nd(const float* a, const float* b, float* out,
+                   const BroadcastMeta& meta);
+
+void launch_mul_nd(const float* a, const float* b, float* out,
+                   const BroadcastMeta& meta);
+
+
+void launch_div_nd(const float* a, const float* b, float* out,
+                   const BroadcastMeta& meta);

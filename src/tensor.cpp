@@ -2,11 +2,14 @@
 #include "cuda_check.cuh"
 #include "kernels.cuh"
 
+#include <algorithm>
 #include <cuda_runtime.h>
 #include <limits>
 #include <stdexcept>
 #include <utility>
 #include <vector>
+
+static BroadcastMeta make_broadcast_metadata(const Tensor& a, const Tensor& b);
 
 std::vector<int> Tensor::contiguous_strides(const std::vector<int>& shape) {
     std::vector<int> result(shape.size());
