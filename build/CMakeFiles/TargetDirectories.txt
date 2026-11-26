@@ -1,3 +1,0 @@
-/home/midhun411/Autogard_engine/autograd-engine/build/CMakeFiles/autograd_engine.dir
-/home/midhun411/Autogard_engine/autograd-engine/build/CMakeFiles/edit_cache.dir
-/home/midhun411/Autogard_engine/autograd-engine/build/CMakeFiles/rebuild_cache.dir
